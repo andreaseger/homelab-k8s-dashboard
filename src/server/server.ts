@@ -57,40 +57,57 @@ async function createServer() {
   const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
   const k8sCustomApi = kc.makeApiClient(k8s.CustomObjectsApi);
 
+  async function listCustomObjects<T>(
+    group: string,
+    version: string,
+    namespace: string,
+    plural: string,
+  ): Promise<T[]> {
+    try {
+      const response = (await k8sCustomApi.listNamespacedCustomObject({
+        group,
+        version,
+        namespace,
+        plural,
+      })) as { items: T[] };
+      return response.items || [];
+    } catch (error) {
+      console.error(`Failed to fetch ${plural}:`, error);
+      return [];
+    }
+  }
+
+  async function getLatestImages(): Promise<Map<string, string>> {
+    const latestImages = new Map();
+    const imagePolicies = await listCustomObjects<ImagePolicy>(
+      "image.toolkit.fluxcd.io",
+      "v1beta2",
+      "flux-system",
+      "imagepolicies",
+    );
+    for (const policy of imagePolicies) {
+      if (
+        policy.metadata.name.endsWith("-latest") &&
+        policy.status &&
+        policy.status.latestImage
+      ) {
+        const latestImage = policy.status.latestImage;
+        const repository = latestImage.split(":")[0];
+        latestImages.set(repository, latestImage);
+      }
+    }
+    return latestImages;
+  }
+
   async function fetchContainerImages() {
     const excludedNamespaces = (process.env.EXCLUDED_NAMESPACES || "")
       .split(",")
       .filter(Boolean);
-
-    const latestImages = new Map();
-    try {
-      const imagePolicies = (await k8sCustomApi.listNamespacedCustomObject(
-        "image.toolkit.fluxcd.io",
-        "v1beta2",
-        "flux-system",
-        "imagepolicies",
-      )) as { body: { items: ImagePolicy[] } };
-
-      if (imagePolicies && imagePolicies.body.items) {
-        for (const policy of imagePolicies.body.items) {
-          if (
-            policy.metadata.name.endsWith("-latest") &&
-            policy.status &&
-            policy.status.latestImage
-          ) {
-            const latestImage = policy.status.latestImage;
-            const repository = latestImage.split(":")[0];
-            latestImages.set(repository, latestImage);
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch ImagePolicies:", error);
-    }
-
+    const latestImages = await getLatestImages();
     const pods = await k8sApi.listPodForAllNamespaces();
     const imagesMap = new Map();
-    for (const pod of pods.body.items) {
+
+    for (const pod of pods.items) {
       if (pod.status?.phase !== "Running" || !pod.spec || !pod.metadata) {
         continue;
       }
@@ -165,42 +182,32 @@ async function createServer() {
   }
 
   async function fetchHelmCharts() {
+    const helmRepositoriesMap = new Map();
+    const helmRepositories = await listCustomObjects<HelmRepository>(
+      "source.toolkit.fluxcd.io",
+      "v1",
+      "flux-system",
+      "helmrepositories",
+    );
+    for (const repo of helmRepositories) {
+      helmRepositoriesMap.set(repo.metadata.name, repo.spec.url);
+    }
+
     const helmCharts = [];
-    const helmRepositories = new Map();
-    try {
-      const helmRepoList = (await k8sCustomApi.listNamespacedCustomObject(
-        "source.toolkit.fluxcd.io",
-        "v1",
-        "flux-system",
-        "helmrepositories",
-      )) as { body: { items: HelmRepository[] } };
-
-      if (helmRepoList && helmRepoList.body.items) {
-        for (const repo of helmRepoList.body.items) {
-          helmRepositories.set(repo.metadata.name, repo.spec.url);
-        }
-      }
-
-      const helmChartList = (await k8sCustomApi.listNamespacedCustomObject(
-        "source.toolkit.fluxcd.io",
-        "v1beta2",
-        "flux-system",
-        "helmcharts",
-      )) as { body: { items: HelmChartCR[] } };
-
-      if (helmChartList && helmChartList.body.items) {
-        for (const chart of helmChartList.body.items) {
-          helmCharts.push({
-            name: chart.metadata.name,
-            chart: chart.spec.chart,
-            configured_version: chart.spec.version,
-            installed_version: chart.status?.artifact?.revision,
-            repository_url: helmRepositories.get(chart.spec.sourceRef.name),
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Failed to fetch HelmCharts:", error);
+    const helmChartList = await listCustomObjects<HelmChartCR>(
+      "source.toolkit.fluxcd.io",
+      "v1beta2",
+      "flux-system",
+      "helmcharts",
+    );
+    for (const chart of helmChartList) {
+      helmCharts.push({
+        name: chart.metadata.name,
+        chart: chart.spec.chart,
+        configured_version: chart.spec.version,
+        installed_version: chart.status?.artifact?.revision,
+        repository_url: helmRepositoriesMap.get(chart.spec.sourceRef.name),
+      });
     }
     return { helm_charts: helmCharts, last_updated: Date.now() };
   }

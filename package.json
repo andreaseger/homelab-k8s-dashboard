@@ -1,5 +1,5 @@
 {
-  "name": "container-dashboard",
+  "name": "k8s-dashboard",
   "version": "1.0.0",
   "description": "This project is a web application that displays a dashboard of all deployed container images and their versions in a Kubernetes cluster.",
   "main": "index.js",

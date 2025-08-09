@@ -1,69 +1,49 @@
 <template>
   <div>
-    <h1>Container Dashboard</h1>
+    <h1>k8s Dashboard</h1>
     <p>Last updated: {{ lastUpdated }}</p>
     <h2>Container Images</h2>
-    <table>
-      <thead>
-        <tr>
-          <th @click="sortBy('repository')">
-            Repository
-          </th>
-          <th @click="sortBy('tag')">
-            Tag
-          </th>
-          <th @click="sortBy('namespaces')">
-            Namespaces
-          </th>
-          <th @click="sortBy('container_names')">
-            Container Names
-          </th>
-          <th @click="sortBy('oldest_pod_age')">
-            Oldest Pod Age
-          </th>
-          <th @click="sortBy('total_restarts')">
-            Total Restarts
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="image in sortedImages"
-          :key="`${image.repository}:${image.tag}`"
+    <DataTable
+      :headers="imageHeaders"
+      :data="filteredImages"
+      default-sort-key="namespaces"
+    >
+      <template #tag="{ item }">
+        <span
+          :title="
+            item.newer_image_available
+              ? `Newer image available: ${item.latest_image}`
+              : ''
+          "
         >
-          <td>{{ image.repository }}</td>
-          <td
-            :title="
-              image.newer_image_available
-                ? `Newer image available: ${image.latest_image}`
-                : ''
-            "
-          >
-            {{ image.tag }}
-            <span
-              v-if="image.newer_image_available"
-              class="update-icon"
-            >🚀</span>
-          </td>
-          <td>{{ image.namespaces.join(", ") }}</td>
-          <td>{{ image.container_names.join(", ") }}</td>
-          <td>
-            {{ formatAge(image.oldest_pod_age) }}
-            <span
-              v-if="isOld(image.oldest_pod_age)"
-              class="age-icon"
-            >🕰️</span>
-          </td>
-          <td>
-            {{ image.total_restarts }}
-            <span
-              v-if="hasManyRestarts(image.total_restarts)"
-              class="restarts-icon"
-            >🔥</span>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+          {{ item.tag }}
+          <span
+            v-if="item.newer_image_available"
+            class="update-icon"
+          >🚀</span>
+        </span>
+      </template>
+      <template #namespaces="{ item }">
+        {{ item.namespaces.join(", ") }}
+      </template>
+      <template #container_names="{ item }">
+        {{ item.container_names.join(", ") }}
+      </template>
+      <template #oldest_pod_age="{ item }">
+        {{ formatAge(item.oldest_pod_age) }}
+        <span
+          v-if="isOld(item.oldest_pod_age)"
+          class="age-icon"
+        >🕰️</span>
+      </template>
+      <template #total_restarts="{ item }">
+        {{ item.total_restarts }}
+        <span
+          v-if="hasManyRestarts(item.total_restarts)"
+          class="restarts-icon"
+        >🔥</span>
+      </template>
+    </DataTable>
     <div class="controls">
       <button
         :title="`Excluded namespaces: ${excludedNamespaces.join(', ')}`"
@@ -74,51 +54,26 @@
     </div>
 
     <h2>Helm Charts</h2>
-    <table>
-      <thead>
-        <tr>
-          <th @click="sortHelmBy('name')">
-            Name
-          </th>
-          <th @click="sortHelmBy('chart')">
-            Chart
-          </th>
-          <th @click="sortHelmBy('configured_version')">
-            Configured Version
-          </th>
-          <th @click="sortHelmBy('installed_version')">
-            Installed Version
-          </th>
-          <th @click="sortHelmBy('repository_url')">
-            Repository URL
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr
-          v-for="chart in sortedHelmCharts"
-          :key="chart.name"
-        >
-          <td>{{ chart.name }}</td>
-          <td>{{ chart.chart }}</td>
-          <td>{{ chart.configured_version }}</td>
-          <td>{{ chart.installed_version }}</td>
-          <td>
-            <a
-              :href="chart.repository_url"
-              target="_blank"
-            >{{
-              chart.repository_url
-            }}</a>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <DataTable
+      :headers="helmHeaders"
+      :data="helmCharts"
+      default-sort-key="chart"
+    >
+      <template #repository_url="{ item }">
+        <a
+          :href="item.repository_url"
+          target="_blank"
+        >{{
+          item.repository_url
+        }}</a>
+      </template>
+    </DataTable>
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, onMounted, computed } from "vue";
+import DataTable from "./components/DataTable.vue";
 
 interface ContainerImage {
   repository: string;
@@ -141,16 +96,32 @@ interface HelmChart {
 
 export default defineComponent({
   name: "App",
+  components: {
+    DataTable,
+  },
   setup() {
     const images = ref<ContainerImage[]>([]);
     const helmCharts = ref<HelmChart[]>([]);
     const lastUpdated = ref<string>("");
     const excludedNamespaces = ref<string[]>([]);
     const showExcluded = ref(false);
-    const sortKey = ref<keyof ContainerImage>("namespaces");
-    const sortOrder = ref<"asc" | "desc">("asc");
-    const helmSortKey = ref<keyof HelmChart>("chart");
-    const helmSortOrder = ref<"asc" | "desc">("asc");
+
+    const imageHeaders = [
+      { key: "repository", text: "Repository" },
+      { key: "tag", text: "Tag" },
+      { key: "namespaces", text: "Namespaces" },
+      { key: "container_names", text: "Container Names" },
+      { key: "oldest_pod_age", text: "Oldest Pod Age" },
+      { key: "total_restarts", text: "Total Restarts" },
+    ];
+
+    const helmHeaders = [
+      { key: "name", text: "Name" },
+      { key: "chart", text: "Chart" },
+      { key: "configured_version", text: "Configured Version" },
+      { key: "installed_version", text: "Installed Version" },
+      { key: "repository_url", text: "Repository URL" },
+    ];
 
     const fetchImages = async () => {
       const res = await fetch("/api/images");
@@ -182,58 +153,6 @@ export default defineComponent({
       );
     });
 
-    const sortBy = (key: keyof ContainerImage) => {
-      if (sortKey.value === key) {
-        sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
-      } else {
-        sortKey.value = key;
-        sortOrder.value = "asc";
-      }
-    };
-
-    const sortHelmBy = (key: keyof HelmChart) => {
-      if (helmSortKey.value === key) {
-        helmSortOrder.value = helmSortOrder.value === "asc" ? "desc" : "asc";
-      } else {
-        helmSortKey.value = key;
-        helmSortOrder.value = "asc";
-      }
-    };
-
-    const sortedImages = computed(() => {
-      return [...filteredImages.value].sort((a, b) => {
-        const aValue = a[sortKey.value];
-        const bValue = b[sortKey.value];
-
-        // Handle array sorting by joining the array
-        const aComparable = Array.isArray(aValue) ? aValue.join(", ") : aValue;
-        const bComparable = Array.isArray(bValue) ? bValue.join(", ") : bValue;
-
-        if (aComparable < bComparable) {
-          return sortOrder.value === "asc" ? -1 : 1;
-        }
-        if (aComparable > bComparable) {
-          return sortOrder.value === "asc" ? 1 : -1;
-        }
-        return 0;
-      });
-    });
-
-    const sortedHelmCharts = computed(() => {
-      return [...helmCharts.value].sort((a, b) => {
-        const aValue = a[helmSortKey.value];
-        const bValue = b[helmSortKey.value];
-
-        if (aValue < bValue) {
-          return helmSortOrder.value === "asc" ? -1 : 1;
-        }
-        if (aValue > bValue) {
-          return helmSortOrder.value === "asc" ? 1 : -1;
-        }
-        return 0;
-      });
-    });
-
     const formatAge = (seconds: number) => {
       if (seconds < 60) return `${seconds}s`;
       if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
@@ -258,12 +177,11 @@ export default defineComponent({
       images,
       helmCharts,
       lastUpdated,
-      sortBy,
-      sortedImages,
       showExcluded,
       toggleShowExcluded,
-      sortHelmBy,
-      sortedHelmCharts,
+      filteredImages,
+      imageHeaders,
+      helmHeaders,
       formatAge,
       isOld,
       hasManyRestarts,
