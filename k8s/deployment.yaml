@@ -12,6 +12,7 @@ spec:
       labels:
         app: container-dashboard
     spec:
+      serviceAccountName: container-dashboard
       containers:
       - name: container-dashboard
         image: container-dashboard:latest # replace with your image
