@@ -13,8 +13,8 @@
     </thead>
     <tbody>
       <tr
-        v-for="item in sortedData"
-        :key="item.id"
+        v-for="(item, index) in sortedData"
+        :key="index"
       >
         <td
           v-for="header in headers"
@@ -33,7 +33,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed, PropType } from "vue";
+import { defineComponent, ref, computed } from "vue";
+import type { PropType } from "vue";
 
 interface TableHeader {
   key: string;
@@ -52,7 +53,7 @@ export default defineComponent({
       required: true,
     },
     data: {
-      type: Array as PropType<DataItem<string | number | string[]>[]>,
+      type: Array as PropType<DataItem<string | number | string[] | boolean>[]>,
       required: true,
     },
     defaultSortKey: {

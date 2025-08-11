@@ -1,7 +1,7 @@
 import express from "express";
 import * as k8s from "@kubernetes/client-node";
 import { createCache } from "cache-manager";
-import { createServer as createViteServer } from "vite";
+
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -46,10 +46,10 @@ interface HelmRepository {
 
 async function createServer() {
   const app = express();
-  const port = parseInt(process.env.VITE_PORT) || 8080;
+  const port = parseInt(process.env.PORT || "8080");
 
   const cache = createCache({
-    ttl: (parseInt(process.env.CACHE_TTL) || 300) * 1000,
+    ttl: parseInt(process.env.CACHE_TTL || "300") * 1000,
   });
 
   const kc = new k8s.KubeConfig();
@@ -144,7 +144,7 @@ async function createServer() {
         let latest_image = "";
         if (latestImages.has(repository)) {
           const latestImage = latestImages.get(repository);
-          if (latestImage !== imageFull) {
+          if (latestImage && latestImage !== imageFull) {
             newer_image_available = true;
             latest_image = latestImage;
           }
@@ -169,7 +169,9 @@ async function createServer() {
           image.total_restarts += restartCount;
         }
         const image = imagesMap.get(imageIdentifier);
-        image.namespaces.push(pod.metadata.namespace);
+        if (pod.metadata.namespace) {
+          image.namespaces.push(pod.metadata.namespace);
+        }
         image.container_names.push(container.name);
       }
     }
@@ -244,10 +246,8 @@ async function createServer() {
 
   if (process.env.NODE_ENV === "production") {
     app.use(express.static(path.resolve(__dirname, "..", "client")));
-    app.get("*", (req, res) => {
-      res.sendFile(path.resolve(__dirname, "..", "client", "index.html"));
-    });
   } else {
+    const { createServer: createViteServer } = await import("vite");
     const { default: vue } = await import("@vitejs/plugin-vue");
     const vite = await createViteServer({
       server: { middlewareMode: true },

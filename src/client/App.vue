@@ -46,6 +46,7 @@
     </DataTable>
     <div class="controls">
       <button
+        v-if="excludedNamespaces.length > 0"
         :title="`Excluded namespaces: ${excludedNamespaces.join(', ')}`"
         @click="toggleShowExcluded"
       >

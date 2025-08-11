@@ -4,9 +4,9 @@
   "description": "This project is a web application that displays a dashboard of all deployed container images and their versions in a Kubernetes cluster.",
   "main": "index.js",
   "scripts": {
-    "dev": "tsx --env-file .env src/server/server.ts",
+    "dev": "tsx --watch --env-file .env src/server/server.ts",
     "start": "node dist/server/server.js",
-    "build": "tsc && vite build --outDir dist/client",
+    "build": "rm dist/* -rf && vue-tsc --build && vite build",
     "prepare": "husky",
     "format": "prettier --write .",
     "lint": "eslint --fix ."
@@ -22,6 +22,7 @@
   },
   "devDependencies": {
     "@rushstack/eslint-patch": "^1.12.0",
+    "@tsconfig/node24": "^24.0.1",
     "@types/cache-manager": "^4.0.6",
     "@types/express": "^5.0.3",
     "@types/node": "^24.2.1",
@@ -35,9 +36,7 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.1.5",
     "prettier": "^3.6.2",
-    "ts-node": "^10.9.2",
     "tsx": "^4.20.3",
-    "typescript": "^5.9.2",
     "vite": "^7.1.1",
     "vue": "^3.5.18",
     "vue-tsc": "^3.0.5"

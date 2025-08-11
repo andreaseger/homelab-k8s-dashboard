@@ -1,4 +1,4 @@
-# Container Dashboard
+# k8s Dashboard
 
 This project is a web application that displays a dashboard of all deployed container images and their versions in a Kubernetes cluster.
 
@@ -39,7 +39,7 @@ The frontend will be running at `http://127.0.0.1:5173`.
 To build the Docker container locally, run the following command from the project root:
 
 ```bash
-docker build -t container-dashboard .
+docker build -t k8s-dashboard .
 ```
 
 ### Run the container
@@ -47,7 +47,7 @@ docker build -t container-dashboard .
 To run the container locally, you need to provide it with access to your Kubernetes cluster. You can do this by mounting your kubeconfig file.
 
 ```bash
-docker run -p 8080:80 -v ~/.kube/config:/root/.kube/config container-dashboard
+docker run -p 8080:80 -v ~/.kube/config:/root/.kube/config k8s-dashboard
 ```
 
 The application will be available at `http://localhost:8080`.
@@ -67,7 +67,7 @@ The application will be available at `http://localhost:8080`.
 4.  **Access the Application**: The service is of type `ClusterIP` by default. To access it, you can use port-forwarding:
 
     ```bash
-    kubectl port-forward svc/container-dashboard-service 8080:80
+    kubectl port-forward svc/k8s-dashboard-service 8080:80
     ```
 
     The dashboard will then be available at `http://localhost:8080`.

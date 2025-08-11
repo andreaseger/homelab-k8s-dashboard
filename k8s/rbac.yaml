@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: container-dashboard
+  name: k8s-dashboard
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: container-dashboard-reader
+  name: k8s-dashboard-reader
 rules:
 - apiGroups: [""]
   resources: ["pods"]
@@ -21,12 +21,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: container-dashboard-reader-binding
+  name: k8s-dashboard-reader-binding
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: container-dashboard-reader
+  name: k8s-dashboard-reader
 subjects:
 - kind: ServiceAccount
-  name: container-dashboard
+  name: k8s-dashboard
   namespace: default # You might want to change this to the namespace you deploy to

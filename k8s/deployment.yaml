@@ -1,31 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: container-dashboard
+  name: k8s-dashboard
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: container-dashboard
+      app: k8s-dashboard
   template:
     metadata:
       labels:
-        app: container-dashboard
+        app: k8s-dashboard
     spec:
-      serviceAccountName: container-dashboard
+      serviceAccountName: k8s-dashboard
       containers:
-      - name: container-dashboard
-        image: container-dashboard:latest # replace with your image
+      - name: k8s-dashboard
+        image: k8s-dashboard:latest # replace with your image
         ports:
         - containerPort: 8080
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: container-dashboard
+  name: k8s-dashboard
 spec:
   selector:
-    app: container-dashboard
+    app: k8s-dashboard
   ports:
   - protocol: TCP
     port: 80
