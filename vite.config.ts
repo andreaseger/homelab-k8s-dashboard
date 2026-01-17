@@ -7,11 +7,6 @@ export default ({ mode }: { mode: string }) => {
   return defineConfig({
     root: "src/client",
     plugins: [vue()],
-    // server: {
-    //   proxy: {
-    //     "/api": `http://${process.env.VITE_HOST || "localhost"}:${process.env.VITE_PORT || 8080}`,
-    //   },
-    // },
     build: {
       outDir: "../../dist/client",
     },

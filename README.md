@@ -2,35 +2,24 @@
 
 This project is a web application that displays a dashboard of all deployed container images and their versions in a Kubernetes cluster.
 
-It consists of a Python backend using FastAPI and a Vue.js frontend.
+It consists of a Node.js backend using Express.js and a Vue.js frontend.
 
 ## Project Structure
 
-- `backend/`: The FastAPI backend application.
-- `frontend/`: The Vue.js frontend application.
+- `src/server/`: The Express.js backend application.
+- `src/client/`: The Vue.js frontend application.
 - `k8s/`: Kubernetes deployment files.
 - `.github/workflows/`: GitHub Actions for CI/CD.
 - `Dockerfile`: Dockerfile for building the application container.
 
 ## Local Development
 
-To run the application locally, you need to have Python, Node.js, and npm installed.
+To run the application locally, you need to have Node.js and npm installed.
 
-### Backend
+1.  Install dependencies: `npm install`
+2.  Run the development server: `npm run dev`
 
-1.  Navigate to the `backend` directory.
-2.  Install dependencies: `uv pip install -r requirements.txt`
-3.  Run the development server: `uvicorn main:app --reload`
-
-The backend will be running at `http://127.0.0.1:8000`.
-
-### Frontend
-
-1.  Navigate to the `frontend` directory.
-2.  Install dependencies: `npm install`
-3.  Run the development server: `npm run dev`
-
-The frontend will be running at `http://127.0.0.1:5173`.
+The frontend will be running at `http://127.0.0.1:8080`.
 
 ## Docker
 

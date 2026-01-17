@@ -214,6 +214,10 @@ async function createServer() {
     return { helm_charts: helmCharts, last_updated: Date.now() };
   }
 
+  app.get("/health", (req, res) => {
+    res.status(200).json({ status: "ok" });
+  });
+
   app.get("/api/images", async (req, res) => {
     try {
       const cachedData = await cache.get("images");
