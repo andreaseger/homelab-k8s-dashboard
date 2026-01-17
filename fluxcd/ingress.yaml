@@ -13,10 +13,6 @@ metadata:
     gethomepage.dev/icon: "sh-kubernetes.svg"
     gethomepage.dev/group: "infra"
 spec:
-  tls:
-    - hosts:
-        - k8s-dashboard.local
-      secretName: k8s-dashboard-tls
   rules:
     - host: k8s-dashboard.local
       http:
